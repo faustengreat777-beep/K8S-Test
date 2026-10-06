@@ -28,7 +28,7 @@ The spec requires production-ready Dockerfiles (multi-stage, non-root, minimal i
    - OSV-Scanner (Go and npm dependencies);
    - an image scanner — **Grype** by default, Trivy allowed only at a known-good version pinned by digest after the 2026 incident, so two independent scanners can be compared in nightly runs;
    - **gitleaks** (and GitHub push protection);
-   - static analysis (golangci-lint with gosec; ESLint security rules);
+   - static analysis (golangci-lint with gosec; Oxlint for the frontend);
    - a **license policy** gate (deny GPL/AGPL/SSPL/BSL in the *linked* dependency graph; record MPL-2.0 usage in NOTICE).
 4. **SBOM**: Syft-generated SBOMs for binaries and images (SPDX and CycloneDX), attached to releases and to image attestations.
 5. **Signing & provenance**: **cosign keyless** signatures (Sigstore, GitHub OIDC) for images, binaries, the Helm chart, catalog bundles and offline bundles; **SLSA build provenance** attestations (GitHub artifact attestations / SLSA generator). Users get documented verification commands.

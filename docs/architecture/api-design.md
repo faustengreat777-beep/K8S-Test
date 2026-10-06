@@ -260,7 +260,7 @@ data: {"status":"SUCCEEDED"}
 
 - **Browser**: `POST /auth/login` sets the cookie `__Host-session` (`HttpOnly; Secure; SameSite=Lax; Path=/`). Unsafe methods require the `X-CSRF-Token` header (synchronizer token bound to the session; the token is provided in `GET /me`). Sessions rotate on login and privilege change.
 - **CLI / automation**: `Authorization: Bearer fvt_…` API keys (prefix for lookup + secret verified against a hash). Later: OAuth 2.0 device flow through the configured OIDC provider (ee) and service accounts.
-- **Authorization** is checked in the application layer for every request (`Authorizer.Authorize(principal, permission, resource)`) with org/project/cluster scope. Permissions follow `resource:verb` (see [Security model](../security/SECURITY_MODEL.md#authorization)). API keys can only narrow, never widen, their owner's permissions.
+- **Authorization** is checked in the application layer for every request (`Authorizer.Authorize(principal, permission, resource)`) with org/project/cluster scope. Permissions follow `resource:verb` (see [Security model](../security/SECURITY_MODEL.md#4-authorization)). API keys can only narrow, never widen, their owner's permissions.
 - **Kubeconfig downloads** are themselves audited operations and produce short-lived credentials by default.
 
 ## 9. Webhooks

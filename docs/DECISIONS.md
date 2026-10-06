@@ -31,7 +31,7 @@
 | [0009](architecture/adr/0009-real-time-updates-sse.md) | Server-Sent Events backed by a replayable event log | Proposed | SSE + `Last-Event-ID` replay from PostgreSQL; WebSocket only for a future terminal |
 | [0010](architecture/adr/0010-plugin-model-and-helm.md) | Compile-time plugins; declarative add-ons via embedded Helm 4 SDK | Proposed | `pkg/sdk` interfaces; add-ons as data; Helm v4 SDK; digest-pinned OCI charts; no Bitnami |
 | [0011](architecture/adr/0011-multi-tenancy-and-rls.md) | Multi-tenancy with PostgreSQL RLS as defence in depth | Proposed | Org/project scoping, app-layer authz, `FORCE ROW LEVEL SECURITY`, 404 for foreign ids |
-| [0012](architecture/adr/0012-frontend-stack.md) | Frontend stack | Proposed | React + TypeScript + Vite + Tailwind + shadcn/ui + TanStack + RHF/Zod + Monaco + i18next |
+| [0012](architecture/adr/0012-frontend-stack.md) | Frontend stack | Proposed | React 19 + TypeScript 7 + Vite 8 + Tailwind 4 + shadcn/ui (Base UI) + TanStack + RHF/Zod 4 + Monaco (CodeMirror fallback) + Lingui; Oxlint |
 | [0013](architecture/adr/0013-infrastructure-tooling-boundaries.md) | Infrastructure tooling boundaries; Cluster API deferred | Proposed | Native Go providers; no Terraform/Ansible in core; Cluster API evaluated for clouds in Phase 7 |
 | [0014](architecture/adr/0014-secrets-envelope-encryption.md) | Secrets: envelope encryption with pluggable key providers | Proposed | Tink AEAD keysets per org wrapped by a KEK (local / KMS / OpenBao); only workers decrypt |
 | [0015](architecture/adr/0015-remote-execution-ssh.md) | Agentless SSH with typed commands and an ephemeral signed node helper | Proposed | No shell interpolation; SFTP config files; mandatory host-key verification |

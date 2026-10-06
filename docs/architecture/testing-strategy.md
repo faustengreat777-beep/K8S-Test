@@ -10,7 +10,7 @@
 
 | Level | Scope | Tools | Runs | Target |
 |---|---|---|---|---|
-| Static | Formatting, lint, types, architecture rules (import boundaries), forbidden patterns (`sh -c`), secret scan | gofumpt, golangci-lint v2 (incl. gosec, depguard, custom analyzers), `tsc --noEmit`, ESLint, Prettier, gitleaks | every commit (pre-commit) + CI | 0 findings |
+| Static | Formatting, lint, types, architecture rules (import boundaries), forbidden patterns (`sh -c`), secret scan | gofumpt, golangci-lint v2 (incl. gosec, depguard, custom analyzers), `tsc --noEmit` (TypeScript 7), Oxlint, Prettier, gitleaks | every commit (pre-commit) + CI | 0 findings |
 | Unit (Go) | Domain state machines, planner/DAG, scheduler, retry/backoff, compatibility engine, decision engine, validators, redactor, crypto envelope, error catalog | `go test`, table-driven tests, golden files, Go native fuzzing (`go test -fuzz`) for parsers/validators/quoting | every commit | ≥ 80 % lines in `internal/domain`, `engine`, `catalog`, `recommend`, `secrets` |
 | Unit (web) | Components, hooks, form logic, schema → form rendering | Vitest + Testing Library + axe | every commit | Key components covered; 0 axe violations |
 | Integration (Go) | Repositories with real PostgreSQL (RLS on), River jobs, transactional outbox, API handlers end-to-end through HTTP with real DB, OpenAPI contract validation of every response, SSE streaming and resume | `testcontainers-go` (PostgreSQL 18), `httptest`, kin-openapi validator | every PR | All endpoints have happy-path + authz tests |

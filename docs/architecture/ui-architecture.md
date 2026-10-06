@@ -10,20 +10,21 @@ The web UI is **one client of the public API** (prompt §57). It holds no busine
 
 | Concern | Choice | Notes |
 |---|---|---|
-| Language / framework | TypeScript (strict) + React | Function components, hooks, no class components |
-| Build | Vite | Dev server proxies `/api` to the Go server; production build is embedded into the Go binary with `go:embed` |
+| Language / framework | TypeScript 7 (strict) + React 19 | Function components, hooks, no class components; client-only SPA (no SSR/RSC) |
+| Build | Vite 8 | Dev server proxies `/api` to the Go server; production build is embedded into the Go binary with `go:embed`; Node.js is build-time only |
 | Styling | Tailwind CSS v4 + CSS variables as design tokens | Tokens defined once for light and dark themes |
-| Components | shadcn/ui (copied into `web/src/components/ui`, owned by us) on accessible primitives | Lets us restyle and extend without a vendor UI kit |
+| Components | shadcn/ui (copied into `web/src/components/ui`, owned by us) on Base UI accessible primitives | Lets us restyle and extend without a vendor UI kit |
 | Routing | TanStack Router (file-based, type-safe search params) | Search params hold filters/pagination so views are shareable and restorable |
 | Server state | TanStack Query | Single cache for API data; SSE events update the cache; optimistic UI only for cheap, reversible actions |
 | Forms | React Hook Form + Zod | Zod schemas are **generated** from the OpenAPI/JSON Schema where possible, so client validation matches the server's |
 | API client | Generated from OpenAPI (`openapi-typescript` types + small fetch wrapper) | No handwritten request types |
-| YAML / code | Monaco Editor + `monaco-yaml` (JSON Schema validation, completion, hover docs) + Monaco diff editor | Loaded lazily (large bundle), only on routes that need it |
-| Terminal-style logs | xterm.js for raw command output; virtualized structured log table (TanStack Virtual) for events | Logs can reach 100k lines per operation |
+| YAML / code | Monaco Editor + `monaco-yaml` (JSON Schema validation, completion, hover docs) + Monaco diff editor, behind a `CodeEditor` interface | Loaded lazily (large bundle), bundled locally (no CDN), only on routes that need it; CodeMirror 6 is the drop-in fallback (ADR-0012) |
+| Logs / terminal | Virtualized log viewer (TanStack Virtual + ANSI parsing) for structured events and raw command output; xterm.js only for a future interactive terminal | Logs can reach 100k lines per operation |
 | Command palette | `cmdk` | Ctrl/Cmd + K |
-| i18n | i18next + ICU message format | en and ru from day one; Russian plural rules handled by ICU |
+| i18n | Lingui (ICU MessageFormat, PO catalogs) | en and ru from day one; Russian plural rules (one/few/many/other) handled by ICU/CLDR |
 | Charts | Lightweight SVG charts (utilization, history) | Respect the design tokens; no heavy BI library |
 | Tests | Vitest + Testing Library + MSW; Playwright E2E; axe-core accessibility checks | See [testing strategy](testing-strategy.md) |
+| Lint / format | Oxlint (incl. type-aware rules) + Prettier | ESLint 9 is EOL; Oxlint covers React, a11y and TypeScript rules |
 
 Exact versions are in the [technology stack](technology-stack.md) document.
 
@@ -139,6 +140,7 @@ The wizard:
 - **Local component state** only for ephemeral UI: open dialogs, unsaved input before debounce.
 - **No secrets in the browser state**: credential forms submit and immediately clear fields. The API never returns secrets.
 - **Resilience**: on reconnect or focus, queries refetch. SSE resumes from the last event id. The app shows a non-blocking "connection lost — reconnecting" banner.
+- **One SSE connection per tab**: live topics (the open operation, dashboard health, notifications) are multiplexed over a single stream, which keeps us below the browser's HTTP/1.1 per-host connection limit behind proxies.
 - **Recovery after closing the browser** (prompt §66): opening a cluster with an active operation shows "Deployment in progress" and attaches to the stream. History is replayed from the server.
 
 ## 6. Live operation view (prompt §15)
@@ -189,11 +191,11 @@ Target **WCAG 2.2 AA**:
 
 ## 9. Responsiveness (prompt §91)
 
-Desktop is first-class, tablet (≥ 768 px) is fully supported. Below that, read-only views (status, operations, notifications) work, but complex editing such as the wizard and YAML shows a "best on larger screens" hint while staying usable.
+Desktop is first-class, tablet (≥ 768 px) is fully supported. Supported browsers: current Chrome/Edge (≥ 111), Firefox (≥ 128) and Safari (≥ 16.4). Tailwind CSS v4 and Vite's default build target set this floor. Below that, read-only views (status, operations, notifications) work, but complex editing such as the wizard and YAML shows a "best on larger screens" hint while staying usable.
 
 ## 10. Internationalization (prompt §92)
 
-- i18next with namespaces per feature. Message format is ICU (`{count, plural, one {# node} few {# узла} many {# узлов} other {# узла}}`).
+- Lingui with one catalog (PO file) per locale, messages extracted from source, ICU message format (`{count, plural, one {# node} few {# узла} many {# узлов} other {# узла}}`).
 - Server error codes map to localized messages. The API also localizes `title`/`detail` by `Accept-Language`, and the UI prefers its own catalog to stay consistent.
 - Dates, numbers, durations and bytes are formatted with `Intl` in the user's locale. All times are shown in local time with UTC on hover.
 - English is the source language. Russian is maintained in the same PR as any copy change (CI fails on missing keys). Adding a language means adding a folder.

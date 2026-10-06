@@ -143,7 +143,7 @@ Enterprise code registers its implementations of extension points in `init()` fu
 ## 5. Conventions
 
 - Go: `gofumpt`, `golangci-lint` v2 config in repo, errors wrapped with `%w`, `context.Context` first, no global mutable state except the registry built at start-up, table-driven tests next to code (`*_test.go`), integration tests behind the `integration` build tag.
-- TypeScript: `strict`, ESLint + Prettier, no `any` without justification, components in PascalCase, hooks `useX`.
+- TypeScript: `strict`, Oxlint + Prettier, no `any` without justification, components in PascalCase, hooks `useX`.
 - Commits: Conventional Commits (`feat:`, `fix:`, `docs:` …), signed-off (DCO) for contributions.
 - Docs: English `*.md` plus Russian `*.ru.md` next to it. Both are updated in the same PR.
 - No `TODO`/`FIXME` in production-critical code without an issue link and explanation (prompt §82). The linter checks the format `TODO(#123): …`.

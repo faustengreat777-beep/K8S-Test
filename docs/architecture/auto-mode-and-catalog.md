@@ -50,7 +50,7 @@ catalog/
 └── estimates.yaml               # default task durations for time estimates (until local history exists)
 ```
 
-Example entries (values reflect the research baseline of 2026-10-06; see [technology stack](technology-stack.md#version-baseline)):
+Example entries (values reflect the research baseline of 2026-10-06; see [technology stack](technology-stack.md#3-managed-cluster-components-catalog-baseline)):
 
 ```yaml
 # catalog/kubernetes.yaml (excerpt)

@@ -47,7 +47,27 @@ Go 1.27 note: `encoding/json` now runs on the json/v2 implementation. Error stri
 
 ## 2. Frontend
 
-{{FRONTEND_SECTION}}
+| Component | Choice | Baseline version | License | Notes |
+|---|---|---|---|---|
+| Build runtime | Node.js LTS (build time only; the UI is static assets embedded in the Go binary) | 24.21 LTS now; **26 LTS from 2026-10-28** | MIT | Node 20 is EOL; Vitest 5, MSW 3 and Lingui 6 need Node ≥ 22 |
+| Package manager | pnpm (pinned via `packageManager`) | 11.28 (mature) or 12.9 (Rust rewrite, same lockfile) | MIT | Offline store / registry mirror for air-gapped builds |
+| Language | TypeScript (strict) | **7.0.2** (native Go port) for `tsc --noEmit`; `@typescript/typescript6` alias for tools that need the JS API | Apache-2.0 | TS 7 has no stable programmatic API until 7.1; tsconfig written for TS 6/7 defaults (no `baseUrl`, `moduleResolution: bundler`) |
+| UI library | React + react-dom | **19.3.0** | MIT | Pure client SPA (no RSC/SSR) |
+| Bundler | Vite + @vitejs/plugin-react | **8.3** (Rolldown + Oxc) + 6.1 | MIT | React Compiler optional later via `@rolldown/plugin-babel` |
+| Styling | Tailwind CSS | **4.3.3** | MIT | Browser floor: Chrome/Edge 111+, Safari 16.4+, Firefox 128+ |
+| Components | shadcn/ui (CLI 4) on **Base UI** primitives (shadcn default since 4.13) | shadcn 4.21; @base-ui/react 1.8 | MIT | Components vendored into `web/src/components/ui` (no runtime lock-in) |
+| Routing | TanStack Router (file-based via router plugin) | 1.170 | MIT | Type-safe params and search params (Zod 4) |
+| Server state | TanStack Query | 5.104 | MIT | SSE events update the cache |
+| Tables / virtualization | TanStack Table v9; TanStack Virtual | 9.2; 3.14 | MIT | Table v9 is a new major (recipes lag); logs use Virtual + ANSI parsing |
+| Forms / validation | React Hook Form + Zod 4 + @hookform/resolvers | 7.89; 4.6; 5.9 | MIT | RHF v8 is beta — not used yet |
+| Code / YAML editor | **Monaco Editor** + monaco-yaml (as the spec requires, prompt §96) | monaco-editor 0.55.1–0.57 (pin per monaco-yaml compatibility); monaco-yaml 5.5.1 | MIT | Selective imports, local bundling (no CDN loader), worker alias; behind a `CodeEditor` abstraction with **CodeMirror 6** as the fallback (ADR-0012) |
+| i18n | **Lingui 6** (ICU MessageFormat, CLDR plurals, PO catalogs) | 6.9.0 | MIT | Russian one/few/many/other plurals; translator-friendly PO files |
+| Command palette | cmdk (via shadcn Command) | 1.1.1 | MIT | Dormant since 2025-03 — watch |
+| Interactive terminal (later) | xterm.js | 6.0.0 | MIT | Only for exec/SSH consoles, not for log tailing |
+| SSE client | native `EventSource` (same-origin cookie session); `eventsource-parser` for token-auth contexts | — / 4.1.1 | MIT | One multiplexed stream per tab (HTTP/1.1 connection limit) |
+| Unit / component tests | Vitest (+ Browser Mode), Testing Library, MSW | 5.0.3; RTL 16.3; MSW **3.0** | MIT | MSW 3 is ESM-only, mocks SSE |
+| E2E / a11y | Playwright + @axe-core/playwright | 1.63.0; 4.13 | Apache-2.0; MPL-2.0 | axe as devDependency only |
+| Lint / format | **Oxlint** (+ type-aware rules via tsgolint) + Prettier (or Oxfmt when stable) | oxlint 1.87 | MIT | ESLint 9 is EOL (2026-08-06); ESLint 10 only if a needed plugin has no Oxlint equivalent |
 
 ## 3. Managed-cluster components (catalog baseline)
 

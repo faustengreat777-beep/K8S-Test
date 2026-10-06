@@ -209,7 +209,7 @@ Details: [Core interfaces](architecture/core-interfaces.md) · [Auto Mode & cata
 | Real-time | SSE with replay | 0009 |
 | Plugins | Compile-time Go interfaces + declarative add-ons; embedded Helm SDK | 0010 |
 | Tenancy | Org/project scoping + PostgreSQL RLS | 0011 |
-| Frontend | React, TypeScript, Vite, Tailwind v4, shadcn/ui, TanStack Router/Query, RHF + Zod, Monaco, i18next | 0012 |
+| Frontend | React 19, TypeScript 7, Vite 8, Tailwind v4, shadcn/ui (Base UI), TanStack Router/Query, RHF + Zod 4, Monaco, Lingui | 0012 |
 | Infra tooling | Native Go providers; no Terraform/Ansible in the core; Cluster API evaluated for clouds in Phase 7 | 0013 |
 | Secrets | Envelope encryption (AES-256-GCM), KeyProvider abstraction | 0014 |
 | Remote execution | Agentless SSH, typed commands, signed ephemeral node helper | 0015 |
