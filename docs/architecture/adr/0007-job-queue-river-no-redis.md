@@ -6,7 +6,7 @@
 
 ## Context
 
-Deployments must run asynchronously: API → job queue → worker → deployment engine (prompt §41). The spec mentions Redis + BullMQ, RabbitMQ, NATS and Temporal as options and asks for a reasoned choice. It also lists `REDIS_URL` among settings (prompt §84). Research (2026-10-06):
+Deployments must run asynchronously: API → job queue → worker → deployment (provisioning) engine (prompt §41). The spec mentions Redis + BullMQ, RabbitMQ, NATS and Temporal as options and asks for a reasoned choice. It also lists `REDIS_URL` among settings (prompt §84). Research (2026-10-06):
 - **River v0.49** (MPL-2.0 core, pre-1.0) offers transactional enqueue, unique jobs, retries with backoff, scheduled/periodic jobs, priorities, multiple queues and leader election. Its *workflows*, batching and concurrency limits are only in the commercial River Pro, which we don't need.
 - **asynq** needs Redis and can't enqueue transactionally with PostgreSQL.
 - **Temporal** (MIT) needs a multi-service cluster plus schema upgrades.
@@ -38,7 +38,7 @@ Deployments must run asynchronously: API → job queue → worker → deployment
 ## Consequences
 
 - Positive: one stateful dependency, atomic state + job changes, simpler air-gap and HA, no copyleft or source-available datastore in the default install.
-- Negative: queue throughput is bounded by PostgreSQL. That is plenty for provisioning workloads (operations are long and coarse), and per-replica rate limits need Valkey at large scale. River is pre-1.0, so upgrades need care.
+- Negative: queue throughput is bounded by PostgreSQL. That is plenty for provisioning workloads (operations are long and coarse), and shared (cross-replica) rate limits need Valkey at large scale. River is pre-1.0, so upgrades need care.
 
 ## References
 

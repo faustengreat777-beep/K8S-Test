@@ -22,7 +22,7 @@
 |---|---|---|---|
 | [0001](architecture/adr/0001-record-architecture-decisions.md) | Record architecture decisions | Accepted | Lightweight MADR in `docs/architecture/adr/`, bilingual, immutable once accepted |
 | [0002](architecture/adr/0002-product-name-and-open-core-licensing.md) | Product name, open-core licensing and editions | Proposed | Product name; Apache-2.0 core + commercial `ee/`; entitlements in one service; enterprise never cripples core |
-| [0003](architecture/adr/0003-modular-monolith.md) | Modular monolith with one server binary and process roles | Proposed | `api` / `worker` / `all` / `migrate` roles of one Go binary; only workers hold credentials |
+| [0003](architecture/adr/0003-modular-monolith.md) | Modular monolith with one server binary and process roles | Proposed | `api` / `worker` / `all` / `migrate` (+ `admin`, `version`) subcommands of one Go binary; only workers hold credentials |
 | [0004](architecture/adr/0004-repository-layout.md) | Go-idiomatic monorepo layout with a single Go module | Proposed | `cmd/`, `internal/`, `pkg/`, `plugins/`, `catalog/`, `web/`, `ee/`; enforced import rules |
 | [0005](architecture/adr/0005-api-style-and-contract.md) | REST/JSON API with a committed OpenAPI 3.1 contract (Huma) | Proposed | Typed Go operations generate OpenAPI 3.1; committed spec with oasdiff gate; 202 + Operation for async; RFC 9457 errors |
 | [0006](architecture/adr/0006-persistence-postgresql.md) | PostgreSQL as the only required stateful dependency | Proposed | PG 18 (min 16), pgx, sqlc, goose; no ORM; no Bitnami |

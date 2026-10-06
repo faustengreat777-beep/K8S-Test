@@ -35,7 +35,7 @@ The owner asked the architect to choose an interesting name that does not yet ex
 | Item | Value |
 |---|---|
 | Product | Farvater |
-| Server binary | `farvater-server` (roles: `api`, `worker`, `all`, `migrate`, `admin`) |
+| Server binary | `farvater-server` (subcommands: `api`, `worker`, `all`, `migrate`, `admin`, `version`) |
 | CLI | `farvater` (users can alias it) |
 | ClusterSpec API group | `farvater.io/v1alpha1` |
 | Go module | `github.com/faustengreat777-beep/k8s-test` until the repository is renamed (recommended: `farvater`) |

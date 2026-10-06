@@ -28,8 +28,8 @@ The spec asks for metrics (Prometheus, Grafana, metrics-server), logging (Loki, 
   3. Apache-2.0 alternatives exist in the catalog: VictoriaMetrics k8s-stack and VictoriaLogs (backends), Alloy, Fluent Bit or OTel Collector (agents).
   4. In bundled chart values, Redis is replaced by **Valkey** where possible (Argo CD), and source-available sub-components (falcosidekick-ui redis-stack) stay disabled.
   5. Add-on CI runs an SBOM and license scan of every image, and the policy fails on unexpected licenses.
-- **Not offered**: Promtail (EOL), Loki SSD mode, distributed Tempo (Kafka dependency), MinIO as the bundled object store.
-- **Platform self-observability** (Prometheus metrics, OTel traces, slog logs) is independent of these add-ons (see the deployment model).
+- **Not offered**: Promtail (EOL), Loki Simple Scalable (SSD) mode, distributed Tempo (Kafka dependency), MinIO as the bundled object store.
+- **Platform self-observability** (Prometheus metrics, OTel traces, slog logs) is independent of these add-ons (see the [deployment model](../deployment-model.md)).
 
 ## Alternatives considered
 
@@ -39,7 +39,7 @@ The spec asks for metrics (Prometheus, Grafana, metrics-server), logging (Loki, 
 
 ## Consequences
 
-- Positive: familiar, well-supported defaults with clear license boundaries, and an Apache-2.0 path for licence-sensitive customers.
+- Positive: familiar, well-supported defaults with clear license boundaries, and an Apache-2.0 path for license-sensitive customers.
 - Negative: we track the fast-moving chart relocations (grafana → grafana-community) and Tempo/Loki architecture changes in the catalog.
 
 ## References

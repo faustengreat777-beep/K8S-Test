@@ -39,7 +39,7 @@ The UI, the CLI, a future Terraform/OpenTofu provider and customer automation mu
 ## Consequences
 
 - Positive: one contract for all clients, generated code instead of hand-written DTOs, reviewable API changes, consistent errors.
-- Negative: the contract lives in Go types, so non-Go contributors review the generated YAML diff rather than editing the spec directly. Huma is a single-maintainer-led project (MIT, v2 stable since 2023), so the risk is mitigated because the committed spec is portable to other generators.
+- Negative: the contract lives in Go types, so non-Go contributors review the generated YAML diff rather than editing the spec directly. Huma is led by a single maintainer (MIT, v2 stable since 2023). That concentration risk is mitigated because the committed spec is portable to other generators.
 
 ## References
 

@@ -6,7 +6,7 @@
 
 ## Context
 
-The spec mandates PostgreSQL (prompt §58), a proper migration tool with versioned, reversible and automated migrations (prompt §88), and lists Redis for queues (prompt §43, §84). Self-hosted, air-gapped and HA installs benefit from as few stateful components as possible. Research (2026-10-06): PostgreSQL **18.6** is the latest stable major release, with built-in `uuidv7()`. PG 19 is still in beta (GA targeted late October 2026). PG 14 reaches EOL in Nov 2026 and PG 15 in Nov 2027. Current tooling: pgx v5.11, sqlc v1.31 (pgx/v5 output), goose v3.28 (MIT, embeddable). The Atlas CLI binary ships under a EULA, and its Apache-2.0 Community Edition lacks some commands.
+The spec mandates PostgreSQL (prompt §58), a proper migration tool with versioned, reversible and automated migrations (prompt §88), and lists Redis for queues (prompt §43, §84). Self-hosted, air-gapped and HA installs benefit from as few stateful components as possible. Research (2026-10-06): PostgreSQL **18** is the latest stable major release (current minor 18.6), with built-in `uuidv7()`. PG 19 is still in beta (GA targeted late October 2026). PG 14 reaches EOL in Nov 2026 and PG 15 in Nov 2027. Current tooling: pgx v5.11, sqlc v1.31 (pgx/v5 output), goose v3.28 (MIT, embeddable). The Atlas CLI binary ships under a EULA, and its Apache-2.0 Community Edition lacks some commands.
 
 ## Decision
 
