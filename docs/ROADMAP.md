@@ -4,7 +4,7 @@
 >
 > Related: [PRODUCT](PRODUCT.md) · [ARCHITECTURE](ARCHITECTURE.md) · [DECISIONS](DECISIONS.md)
 
-The product spec contains two roadmaps: phases 0–10 in prompt §101–111 and an updated list in §238. This roadmap merges them, uses §238 as the authoritative order, and adds Phase 0 (research and architecture). The ordering rule is the spec's most important implementation requirement (§239): **enterprise features are not built before the core provisioning engine has proven it can reliably take infrastructure to a healthy cluster and recover from failures.**
+The product spec contains two roadmaps: phases 0–10 in prompt §101–111 and an updated list of phases 1–14 in §238. This roadmap merges them: Phase 0 (research and architecture) comes from §101, and phases 1–14 follow the authoritative order of §238. The ordering rule is the spec's most important implementation requirement (§239): **enterprise features are not built before the core provisioning engine has proven it can reliably take infrastructure to a healthy cluster and recover from failures.**
 
 Every phase follows the same loop (prompt §122): docs first → code → tests → lint → unit → integration → build → Docker → E2E where possible → fix → update docs → short report (format of prompt §123). Every phase ends with something runnable (`make dev` works, prompt §113) and with a **phase gate**: the exit criteria below, plus the [Definition of Done](#definition-of-done), plus a threat-model review.
 
@@ -100,29 +100,43 @@ Phases 5–8 can partly overlap once Phase 4 is stable. Enterprise phases start 
 
 **Scope:** Argo CD and Flux add-ons with automatic cluster registration (prompt §27). Git-backed cluster specs ("GitOps-managed cluster": UI changes create commits/PRs or are blocked, prompt §200). Drift management with Git as source of truth. Git credentials in the vault.
 
+**Exit criteria:** M8 demo passes; UI edits of a GitOps-managed cluster create a commit/PR (or are blocked by policy); drift is detected and reported.
+
 ## Phase 9 — Enterprise foundation (ee)
 
 **Scope:** `ee/` directory with commercial license and build tag; EntitlementService with signed licenses; multi-org administration; teams; custom roles; ABAC conditions; SSO (OIDC, SAML 2.0) through the IdentityProvider abstraction (Okta, Entra ID, Google Workspace, Keycloak, Auth0, generic); SCIM 2.0 provisioning/deprovisioning with session and API-key revocation; MFA (TOTP, WebAuthn) and MFA policy; service accounts; session management (device list, revoke all, suspicious session detection); enterprise audit search and export.
+
+**Exit criteria:** SSO login via Keycloak (OIDC) and a SAML IdP in E2E; SCIM deprovisioning revokes sessions and API keys within one minute; custom-role and ABAC authorization-matrix tests green; Community build contains no `ee/` code.
 
 ## Phase 10 — Enterprise governance (ee)
 
 **Scope:** policy engine (policy as code, levels INFO/WARNING/BLOCK, scopes and inheritance global → org → project → environment → cluster with inherit/override/restrict, OPA/Rego or Cedar adapter), approval policies, change requests (diff, risk, policy results, approvers), deployment approval, maintenance windows, golden templates (locked fields, versions, inheritance), compliance center (frameworks as control mappings, evidence, never claiming compliance), security posture per cluster (CIS via kube-bench/Kubescape).
 
+**Exit criteria:** a BLOCK policy stops a non-compliant production deploy with an explanation; a 2-approver change request gates an upgrade end to end; golden templates enforce locked fields; compliance center shows controls with evidence.
+
 ## Phase 11 — Enterprise fleet (ee)
 
 **Scope:** cluster groups; fleet operations (upgrade 100+ clusters in batches with canary, health gates, automatic stop on failure rate); multi-region and topology-aware placement (regions, zones, racks, failure domains); global dashboard (health, deployments, backups, security, compliance); node lifecycle policies (replace nodes older than N days).
+
+**Exit criteria:** a canary fleet upgrade of ≥ 20 simulated + ≥ 3 real clusters runs in batches and stops automatically when the failure threshold is reached.
 
 ## Phase 12 — Enterprise security (ee)
 
 **Scope:** OpenBao/Vault (Transit KEK + KV backend), AWS/GCP/Azure KMS, BYOK, key rotation tooling; image security (registry allow/block, signature verification via Sigstore/Kyverno, private default registry, Harbor integration); vulnerability management (Trivy Operator data aggregation); supply-chain verification of catalog artifacts; signed releases with SBOM and provenance (already in CI since Phase 1, now enforced on install/import).
 
+**Exit criteria:** KEK in an external KMS/OpenBao with rotation tested; unsigned or disallowed images blocked by policy in E2E; release artifacts verifiable with documented commands.
+
 ## Phase 13 — Enterprise DR & air-gap (ee)
 
 **Scope:** cross-region backup and replication, DR workflows (failover/restore runbooks executed as operations), RPO/RTO tracking and display, backup policies by environment, platform backup/restore; air-gapped installation: `farvater bundle create|verify|import`, private OCI registry, offline Helm charts, offline Kubernetes and OS packages/binaries.
 
+**Exit criteria:** a full cluster is created in a network-isolated CI environment from an imported bundle; backup → restore into another region meets the documented RPO/RTO.
+
 ## Phase 14 — Enterprise platform (ee)
 
 **Scope:** HA reference architecture for the platform (api×3, worker×3, PostgreSQL HA), SLO dashboards (API availability, deployment success, backup success), cost management (allocation by org/project/team/environment/cost center), budgets with thresholds and policy actions, quotas (clusters, nodes, CPU, RAM, storage, deployments per scope), incident management (auto-incidents, assignment, timeline, postmortems; PagerDuty/Opsgenie/Slack/Teams), service catalog (templates, add-on bundles, security and observability profiles), self-service within policy, Terraform/OpenTofu provider (over the public API), enterprise integrations (Jira, ServiceNow, SIEMs).
+
+**Exit criteria:** HA platform survives the loss of one zone without failed operations; SLO dashboards and alerts shipped; budgets and quotas enforced in E2E; incidents created automatically for unavailable clusters.
 
 ---
 
@@ -137,7 +151,8 @@ Phases 5–8 can partly overlap once Phase 4 is stable. Enterprise phases start 
 | M5 (Phase 5) | 5-question Auto Mode → Deploy, with "Why?" explanations |
 | M6 (Phase 6) | Upgrade 1.36 → 1.37, scale, backup/restore, import |
 | M7 (Phase 7) | Hetzner Cloud one-click cluster with cost estimate |
-| M9+ | Enterprise milestones per phase |
+| M8 (Phase 8) | GitOps-managed cluster: a spec change merged in Git is planned, validated and applied; drift is detected |
+| M9+ | Enterprise milestones per phase (see exit criteria) |
 
 ## Definition of Done
 
@@ -147,7 +162,7 @@ A feature is done only if (prompt §125, and §237 for enterprise):
 - tests exist at the right levels (see [testing strategy](architecture/testing-strategy.md)); lint, type checks and build pass; the main happy path works;
 - docs are updated in English and Russian;
 - there are no obvious security issues, no hard-coded secrets, no unexplained TODOs;
-- for enterprise features also: API + UI + permissions + audit + migration if needed + observability + failure handling + E2E + CLI/API support where applicable + tenant isolation verified + Standard edition not broken.
+- for enterprise features also: API + UI + permissions + audit + migration if needed + observability + failure handling + E2E + CLI/API support where applicable + tenant isolation verified + Community ("Standard" in the spec) edition not broken.
 
 ## Top risks to the plan
 

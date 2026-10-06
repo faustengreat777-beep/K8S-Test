@@ -46,7 +46,7 @@ catalog/
 │   ├── longhorn.yaml
 │   └── …
 ├── rules/                       # compatibility rules (declarative), see §2
-├── presets/                     # Minimal, Development, Staging, Production, High Availability, Edge, GPU, AI/ML
+├── presets/                     # Minimal, Development, Staging, Production, High Availability, Edge, GPU, AI/ML (Custom = Production defaults, no file)
 └── estimates.yaml               # default task durations for time estimates (until local history exists)
 ```
 

@@ -83,7 +83,7 @@ Main screens:
 | **Nodes** (prompt §30) | Grouped by role: control plane / workers / pools; per node CPU, RAM, disk, IP, OS, kubelet version, status, conditions, pods, utilization; actions cordon, drain, restart, remove, replace |
 | **Operations** | History with filters; live operation view (section 6) |
 | **Add-ons** | Installed add-ons with health and version; catalog cards with description, pros/cons, compatibility, use cases (prompt §17); configure via schema-driven form or YAML |
-| **Settings → Configuration** | Advanced tree (prompt §4): General, Kubernetes, Control Plane, Workers, Networking, DNS, Container Runtime, Storage, Gateway/Ingress, Load Balancer, Certificates, Security, Observability, Logging, Backup, GitOps, Autoscaling, GPU, Registry, Add-ons, Scheduling, Policies, Advanced — with **YAML** tab and **History/Diff** tab |
+| **Cluster → Configuration** | Advanced tree (prompt §4): General, Kubernetes, Control Plane, Workers, Networking, DNS, Container Runtime, Storage, Gateway/Ingress, Load Balancer, Certificates, Security, Observability, Logging, Backup, GitOps, Autoscaling, GPU, Registry, Add-ons, Scheduling, Policies, Advanced — with **YAML** tab and **History/Diff** tab |
 | **Upgrade** | Upgrade advisor: current vs target, compatibility, preflight, plan, potential downtime, warnings → confirm |
 
 Out of scope: a generic browser for in-cluster Kubernetes resources (pods, deployments, CRDs). Cluster pages link to **Headlamp**, which the platform can install as an optional add-on, authenticated with the user-scoped kubeconfig. Our UI stays focused on lifecycle, plans, diffs, explanations and governance.
@@ -197,7 +197,7 @@ Desktop is first-class, tablet (≥ 768 px) is fully supported. Supported browse
 
 ## 10. Internationalization (prompt §92)
 
-- Lingui with one catalog (PO file) per locale, messages extracted from source, ICU message format (`{count, plural, one {# node} few {# узла} many {# узлов} other {# узла}}`).
+- Lingui with one catalog (PO file) per locale, messages extracted from source, ICU message format. English: `{count, plural, one {# node} other {# nodes}}`; Russian: `{count, plural, one {# узел} few {# узла} many {# узлов} other {# узла}}`.
 - Server error codes map to localized messages. The API also localizes `title`/`detail` by `Accept-Language`, and the UI prefers its own catalog to stay consistent.
 - Dates, numbers, durations and bytes are formatted with `Intl` in the user's locale. All times are shown in local time with UTC on hover.
 - English is the source language. Russian is maintained in the same PR as any copy change (CI fails on missing keys). Adding a language means adding a folder.

@@ -378,7 +378,7 @@ type Notifier interface {
 
 Outbound HTTP from integrations, webhooks, Helm repositories and Git always goes through `internal/adapters/httpx` (SSRF guard, timeouts, size limits). See the [security model](../security/SECURITY_MODEL.md).
 
-## 11. Application-layer ports (internal)
+## 11. Application-layer and engine ports (internal)
 
 ```go
 // internal/app/ports.go (selection)
@@ -402,6 +402,20 @@ type EntitlementService interface {          // single place for edition/feature
     Limits(ctx context.Context) Limits
 }
 type Clock interface { Now() time.Time }
+
+// internal/engine/ports.go — the engine defines its own ports (it must not import internal/app),
+// implemented by internal/adapters and wired in cmd/*:
+type OperationStore interface {      // load/save operations and tasks with fencing on lease_owner
+    Load(ctx context.Context, id OperationID) (*Operation, []*Task, error)
+    TransitionTask(ctx context.Context, lease Lease, t TaskTransition) error
+    TransitionOperation(ctx context.Context, lease Lease, o OperationTransition) error
+}
+type LeaseManager interface {
+    Acquire(ctx context.Context, op OperationID, owner string, ttl time.Duration) (Lease, error)
+    Renew(ctx context.Context, l Lease) error
+    Release(ctx context.Context, l Lease) error
+}
+type EventSink interface { Append(ctx context.Context, e OperationEvent) error } // persisted + NOTIFY on commit
 ```
 
 ## 12. Enterprise extension points
@@ -412,7 +426,7 @@ Enterprise code in `ee/` (commercial license, build tag `ee`) plugs into the sam
 |---|---|---|
 | `IdentityProvider` (login methods) | local password | OIDC, SAML 2.0 (Okta, Entra ID, Google Workspace, Keycloak, Auth0, generic) |
 | `Authorizer` | RBAC with built-in roles | Custom roles + ABAC conditions (policy engine) |
-| `PolicyEvaluator` (pre-deploy checks) | built-in guardrails (safety warnings) | policy as code with scopes, inheritance, BLOCK/WARN/INFO; OPA/Rego or Cedar adapters |
+| `PolicyEvaluator` (pre-deploy checks) | built-in guardrails (safety warnings) | policy as code with scopes, inheritance, BLOCK/WARNING/INFO; OPA/Rego or Cedar adapters |
 | `ApprovalGate` (before executing an operation) | always "approved" | change requests, approval policies, maintenance windows |
 | `AuditSink` | PostgreSQL audit table + JSON/CSV export | SIEM webhook, syslog, S3, Splunk/Datadog/Elastic/Sentinel |
 | `KeyProvider` | local KEK | OpenBao/Vault Transit, AWS/GCP/Azure KMS, BYOK |

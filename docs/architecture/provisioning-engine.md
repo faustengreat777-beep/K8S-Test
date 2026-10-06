@@ -27,7 +27,7 @@ ClusterSpec (UI / YAML / CLI / API / template / Auto Mode)
    ▼
 1. Validate        schema (strict) → semantic validators → secrets-free check
 2. Resolve         catalog: minor → pinned patch, chart versions + digests, images  → ResolvedSpec
-3. Check           compatibility engine (BLOCK/WARN/INFO) → guardrails / policies → (ee) approvals
+3. Check           compatibility engine (BLOCK/WARNING/INFO) → guardrails / policies → (ee) approvals
 4. Preflight       live checks against hosts / provider (async operation of type `preflight`)
 5. Plan            planner builds DAG from ResolvedSpec + observed state → diff, estimates, irreversible flags
 6. Confirm         user reviews plan ("Deploy Cluster"); idempotency key binds the request
@@ -174,7 +174,8 @@ Rules for task authors (enforced by review, by tests, and where possible by lint
 ```
 PENDING ──▶ RUNNING ──▶ SUCCEEDED
    │           │  └──▶ RETRYING ──▶ RUNNING (attempt+1, after backoff)
-   │           └─────▶ FAILED ──(user Retry / Resume)──▶ PENDING
+   │           ├─────▶ FAILED ──(user Retry / Resume)──▶ PENDING
+   │           └─────▶ CANCELLED (operation cancelled; stopped at a safe point)
    ├──▶ SKIPPED            (Check() == done, or dependency not needed in this plan)
    └──▶ CANCELLED          (operation cancelled before start)
 SUCCEEDED ──(rollback)──▶ ROLLED_BACK   (only reversible tasks)
@@ -221,7 +222,10 @@ All transitions go through `domain.Cluster.Transition(to, reason)`, which checks
 
 **Default failure policy: `pause`.** On a non-retryable task failure (or exhausted retries):
 1. Running sibling tasks finish or are cancelled at safe points. No new tasks start.
-2. The operation becomes `PAUSED`, and the cluster becomes `PAUSED` (or `FAILED` if nothing usable exists yet and the policy is `abort`).
+2. The outcome depends on the operation's failure policy:
+   - `pause` (default): the operation becomes `PAUSED` and the cluster becomes `PAUSED`, waiting for a user decision;
+   - `rollback`: the operation moves to `ROLLING_BACK` and reversible tasks are undone (see below), ending in `ROLLED_BACK`;
+   - `abort`: the operation becomes `FAILED`. The cluster becomes `FAILED` if a `create` produced nothing usable yet; otherwise it returns to its previous phase (e.g. `READY`) with health reflecting the partial change.
 3. A **failure report** is stored in `operations.error` and shown to the user:
 
 ```
@@ -240,7 +244,7 @@ The text comes from the **error catalog**: a stable code (`K8S_JOIN_API_UNREACHA
 **Resume** (also automatic after worker crash):
 1. Re-acquire the lease. Reload the operation and its tasks.
 2. Verify `plan_hash` against the current ResolvedSpec. If the user changed the spec since the plan was made, resume is refused with "spec changed, re-plan".
-3. `SUCCEEDED`/`SKIPPED` tasks stay done. Tasks found `RUNNING` (crash mid-task) are reset to `PENDING`. Because they are idempotent and `Check()` short-circuits, re-running them is safe. `FAILED` tasks are reset to `PENDING` only by an explicit user Retry/Resume.
+3. `SUCCEEDED`/`SKIPPED` tasks stay done. Tasks found `RUNNING` or `RETRYING` (crash mid-task or mid-backoff) are reset to `PENDING`; their attempt counters are kept. Because tasks are idempotent and `Check()` short-circuits, re-running them is safe. `FAILED` tasks are reset to `PENDING` only by an explicit user Retry/Resume.
 4. Continue scheduling.
 
 **Rollback** (user action, or automatic with policy `rollback`):
@@ -248,7 +252,7 @@ The text comes from the **error catalog**: a stable code (`K8S_JOIN_API_UNREACHA
 - Irreversible tasks are never rolled back automatically. If any exist after the rollback boundary, the UI explains the remaining state and offers documented options: keep the partial cluster and fix it forward, or `destroy`.
 - Example (prompt §13): `Install addon → Health check failed → Rollback addon`, implemented per add-on by `addon/<id>.install` (Reversible) + `addon/<id>.health` (failure triggers rollback of that add-on only, when the policy is `rollback`).
 
-**Cancel**: `POST /operations/{id}/cancel` sets `cancel_requested`, sends `NOTIFY operation_cancel`, and the executor cancels task contexts. Tasks stop at safe points. Partially applied steps are left in a state that `Resume` can continue from.
+**Cancel**: `POST /operations/{id}/cancel` sets `cancel_requested`, sends `NOTIFY operation_cancel`, and the executor cancels task contexts. Running tasks stop at their next safe point and become `CANCELLED`, pending tasks become `CANCELLED`, and the operation ends in `CANCELLED`, a terminal state. Cancel never runs rollback implicitly. Because every task is idempotent, the user continues later by planning and starting a **new** operation (`apply`): completed work is detected by `Check()` and skipped, and partially applied steps converge. The UI offers "Rollback reversible steps" as a separate, explicit action.
 
 ## 8. Concurrency and consistency guarantees
 
@@ -281,7 +285,7 @@ The bootstrap layer is a set of reusable, OS-aware task builders used by distrib
 Node ─▶ facts (OS, kernel, arch, CPU, RAM, disks, NICs, time sync, cgroup v2, SELinux/AppArmor)
      ─▶ os.prepare        (packages: conntrack, socat, ebtables/nftables, chrony; hostname; /etc/hosts entries)
      ─▶ kernel.modules     (overlay, br_netfilter; CNI-specific modules from CNIRequirements)
-     ─▶ sysctl             (net.ipv4.ip_forward=1, bridge-nf-call-iptables=1, CNI extras) via /etc/sysctl.d/90-<product>.conf
+     ─▶ sysctl             (net.ipv4.ip_forward=1, bridge-nf-call-iptables=1, CNI extras) via /etc/sysctl.d/90-farvater.conf
      ─▶ swap.disable       (or configure NodeSwap if the spec enables it and the K8s version supports it)
      ─▶ time.sync          (chrony enabled and synced; skew check)
      ─▶ runtime.install    (containerd from catalog version; config rendered from struct; SystemdCgroup=true)
@@ -294,7 +298,7 @@ OS handling lives behind an `OSFamily` strategy (`debian` covers Ubuntu and Debi
 ## 11. Health engine
 
 - `HealthProbe` interface: `Key()`, `Interval()`, `Run(ctx, ClusterAccess) ProbeResult{Status, Reason, Details, Remediation}`.
-- Built-in probes: API server (`/readyz`), etcd (member health through the API server or etcdctl on control-plane nodes), scheduler, controller-manager, node conditions, CNI (agent DaemonSet ready + connectivity check pod), DNS (resolve `kubernetes.default` from a probe pod), Gateway (GatewayClass accepted, Gateway programmed), storage (default StorageClass + provisioner ready; optional PVC smoke test during `health.verify` only), metrics-server, monitoring stack, certificates (expiry of control-plane certs and cert-manager Certificates; WARN < 30 days, CRITICAL < 7 days), backups (last successful within policy).
+- Built-in probes: API server (`/readyz`), etcd (member health through the API server or etcdctl on control-plane nodes), scheduler, controller-manager, node conditions, CNI (agent DaemonSet ready + connectivity check pod), DNS (resolve `kubernetes.default` from a probe pod), Gateway (GatewayClass accepted, Gateway programmed), storage (default StorageClass + provisioner ready; optional PVC smoke test during `health.verify` only), metrics-server, monitoring stack, certificates (expiry of control-plane certs and cert-manager Certificates; WARNING < 30 days, CRITICAL < 7 days), backups (last successful within policy).
 - During operations, `health.verify` runs all probes with strict thresholds. Periodically, a River periodic job per cluster (default every 60 s for READY clusters) updates `cluster_health_checks` and the cluster's aggregate health: worst-of with `UNKNOWN` handling. Transitions emit notifications and outbox events (incidents later in ee).
 
 ## 12. Extending the engine

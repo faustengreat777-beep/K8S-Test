@@ -79,12 +79,12 @@ Ratings: **L**ikelihood / **I**mpact (Low, Medium, High). Phase = the phase in w
 | T30 | Air-gapped bundles | Tampered offline bundle | T | L / H | Signed manifests and checksums verified on import; import is a privileged audited action | 13 |
 | T31 | License / entitlements (ee) | Forged license enabling enterprise features | T | M / L | Ed25519-signed license files verified offline; no security-relevant behaviour depends on the license being genuine (enterprise features are additive) | 9 |
 
-## 6. Residual risks (accepted, with owners)
+## 6. Residual risks (accepted)
 
-1. **Worker compromise exposes secrets used by in-flight operations.** This is inherent to an agentless design. Mitigations: shorten exposure (just-in-time decryption), isolate workers, use KMS audit trails. Revisit if customers require per-tenant worker pools.
-2. **TOFU host-key confirmation depends on the user checking fingerprints.** UX nudges toward known_hosts import or SSH CAs. Enterprise can enforce "known hosts required" policy.
-3. **Self-hosted operators with DB + KEK access can decrypt everything.** This is by definition. Documented in operator guidance. KMS/HSM with separate duties is available in ee.
-4. **AGPL-licensed upstream components installed into managed clusters** (e.g. Grafana, Loki) are a legal risk, not a security one. They are tracked in the ADR on licensing.
+1. **Worker compromise exposes secrets used by in-flight operations.** This is inherent to an agentless design. Mitigations: shorten exposure (just-in-time decryption), isolate workers, use KMS audit trails. Revisit if customers require per-tenant worker pools. Owner: platform architect.
+2. **TOFU host-key confirmation depends on the user checking fingerprints.** UX nudges toward known_hosts import or SSH CAs. Enterprise can enforce "known hosts required" policy. Owner: product owner (UX).
+3. **Self-hosted operators with DB + KEK access can decrypt everything.** This is by definition. Documented in operator guidance. KMS/HSM with separate duties is available in ee. Owner: security maintainer.
+4. **AGPL-licensed upstream components installed into managed clusters** (e.g. Grafana, Loki) are a legal risk, not a security one. They are tracked in the ADR on licensing. Owner: product owner (legal review).
 
 ## 7. Process
 

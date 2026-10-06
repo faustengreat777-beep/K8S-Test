@@ -19,8 +19,8 @@
 | Add-on | Install/upgrade/uninstall/health per add-on and catalog version on **kind/k3d** | `make test-cluster` + Go tests using Helm service | nightly + on catalog changes | Every catalog entry tested before release |
 | Compatibility | Catalog consistency (no cycles, every entry has implementation, version ranges valid), matrix tests (K8s minor × CNI × OS) | Go tests over catalog data | every PR touching catalog | 100 % catalog entries validated |
 | E2E (system) | Full user flows through UI and API: simulated provider (fast), container nodes (real kubeadm), real VMs (nightly/manual) | Playwright + Go E2E harness + CLI | see section 3 | Mandatory scenario green |
-| Security | Authz matrix (endpoint × role × tenant), tenant-escape, SSRF, injection fuzzing, secret-leak canaries, dependency/image scanning | Go tests, fuzzing, govulncheck, OSV-Scanner/Grype, Trivy/Grype | every PR (fast), nightly (full) | 0 high/critical unaccepted |
-| Failure / chaos | Fault injection in SSH, provider, Helm, Kubernetes API, DB; worker kill during operations | Fault-injecting adapters + test harness | every PR (simulated), nightly (container nodes) | Every failure in section 5 produces a correct report and resumes |
+| Security | Authz matrix (endpoint × role × tenant), tenant-escape, SSRF, injection fuzzing, secret-leak canaries, dependency/image scanning | Go tests, fuzzing, govulncheck, OSV-Scanner (dependencies), Grype (images; pinned Trivy as a second opinion in nightly runs) | every PR (fast), nightly (full) | 0 high/critical unaccepted |
+| Failure / chaos | Fault injection in SSH, provider, Helm, Kubernetes API, DB; worker kill during operations | Fault-injecting adapters + test harness | every PR (simulated), nightly (container nodes) | Every scenario in section 5 produces its expected outcome: correct report, plus resume, rollback or rejection as specified |
 
 ## 2. Principles
 
@@ -54,7 +54,7 @@ The owner has no physical or virtual machines. We use three tiers.
 
 ### 3.3 Tier 3 — Real virtual machines (nightly or manual; tens of minutes)
 
-- Option A (recommended once a budget exists): a **Hetzner Cloud project** used by CI through a token stored as a GitHub Actions secret, with VMs created and destroyed per run and spend capped. This validates real networking, real kernels, kube-vip ARP on a Hetzner vSwitch or private network constraints (and proves why MetalLB L2 doesn't work on Hetzner Cloud), real disks for Longhorn, and the Phase 7 Hetzner provider itself.
+- Option A (recommended once a budget exists): a **Hetzner Cloud project** used by CI through a token stored as a GitHub Actions secret, with VMs created and destroyed per run and spend capped. This validates real networking and kernels, the Hetzner Cloud load balancer for the API endpoint (and that L2/ARP VIPs such as MetalLB L2 and kube-vip ARP are correctly blocked on Hetzner Cloud's layer-3 networks), real disks for Longhorn, and the Phase 7 Hetzner provider itself.
 - Option B: **nested VMs on CI runners** (QEMU/KVM, when the runner exposes `/dev/kvm`) using cloud images and cloud-init. This is slower but has no cloud bill, and suits OS-matrix smoke tests.
 - Option C: the owner or contributors run `make e2e-real` against any SSH-reachable machines they have, using the same harness.
 - Until Tier 3 runs, phase reports state clearly which scenarios were verified only on Tiers 1–2 (**no claims of "tested on bare metal" without evidence**).

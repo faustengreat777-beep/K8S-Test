@@ -11,7 +11,7 @@ This document defines the persistent model of the platform: entities, their owne
 | Rule | Decision | Why |
 |---|---|---|
 | Database | PostgreSQL 18 recommended (minimum 16; 14 and 15 reach EOL in Nov 2026 / Nov 2027) | `uuidv7()` built in since 18; mature JSONB, RLS, partitioning, `LISTEN/NOTIFY` |
-| Primary keys | `uuid`, generated as UUIDv7 | Globally unique ids in API URLs; time-ordered, so B-tree indexes stay compact. On PG 16–17 the app generates them |
+| Primary keys | `uuid`, generated as UUIDv7 | Globally unique ids in API URLs; time-ordered, so B-tree indexes stay compact. The DDL sketch uses PG 18's `DEFAULT uuidv7()`; on PG 16–17 the migrations omit the default and the application supplies the id |
 | Time | `timestamptz`, UTC, columns `created_at`, `updated_at` | No local-time ambiguity |
 | Enumerations | `text` + `CHECK` constraint (not PG `ENUM`) | Adding a value is an ordinary migration without the `ALTER TYPE` limitations |
 | Optimistic locking | `version bigint NOT NULL DEFAULT 0` on mutable aggregates | Lost-update protection. The API exposes it as `ETag` / `If-Match` |
@@ -310,7 +310,7 @@ CREATE TABLE cluster_spec_revisions (                -- immutable desired-state 
   cluster_id      uuid NOT NULL REFERENCES clusters(id) ON DELETE CASCADE,
   revision        integer NOT NULL,
   org_id          uuid NOT NULL,
-  spec_schema     text NOT NULL,                    -- e.g. '<group>/v1alpha1'
+  spec_schema     text NOT NULL,                    -- e.g. 'farvater.io/v1alpha1'
   spec            jsonb NOT NULL,                   -- user-authored ClusterSpec (no secrets, only credentialRefs)
   resolved_spec   jsonb,                            -- fully pinned versions after catalog resolution (set at plan time)
   catalog_version text,                             -- catalog bundle version used for resolution
@@ -498,7 +498,7 @@ CREATE TABLE addon_installations (
   UNIQUE (cluster_id, addon_key)
 );
 
-CREATE TABLE backup_policies (                       -- Phase 6
+CREATE TABLE backup_policies (                       -- Phase 4 (etcd snapshots, MVP); Phase 6 adds resources/volumes (Velero)
   id            uuid PRIMARY KEY DEFAULT uuidv7(),
   org_id        uuid NOT NULL,
   cluster_id    uuid NOT NULL REFERENCES clusters(id) ON DELETE CASCADE,
@@ -677,6 +677,17 @@ CREATE POLICY tenant_isolation ON clusters
   WITH CHECK (org_id = current_setting('app.org_id', true)::uuid);
 ```
 
+- Tables that also hold **global rows** (`org_id IS NULL`: built-in roles, built-in presets/templates) use a read policy that admits them, while writes stay tenant-only:
+
+```sql
+CREATE POLICY tenant_read ON roles FOR SELECT
+  USING (org_id IS NULL OR org_id = current_setting('app.org_id', true)::uuid);
+CREATE POLICY tenant_write ON roles FOR ALL
+  USING (org_id = current_setting('app.org_id', true)::uuid)
+  WITH CHECK (org_id = current_setting('app.org_id', true)::uuid);   -- global rows are seeded by migrations only
+```
+
+- Global (non-tenant) tables such as `users` and `platform_settings` have no RLS; access to them goes only through dedicated application services. A user can read only their own row and the members of their organizations.
 - The application connects as role `app` (no `BYPASSRLS`, no DDL rights, no `UPDATE`/`DELETE` on `audit_events`).
 - Each request or job transaction runs `SET LOCAL app.org_id = '<uuid>'` (transaction-scoped, safe with connection pooling).
 - Cross-tenant system tasks (retention, catalog sync, River maintenance) run as a separate role `app_system` that has `BYPASSRLS` and is never used by request handlers.
@@ -693,5 +704,5 @@ CREATE POLICY tenant_isolation ON clusters
 
 - goose SQL migrations live in `migrations/` (core) and `ee/migrations/` (enterprise). They are numbered by timestamp, embedded via `embed.FS`, and applied by `server migrate`. That command holds a PostgreSQL advisory lock, so concurrent replicas are safe.
 - Every migration has a `Down` section unless it is irreversible (data-destroying). Irreversible migrations are marked and documented in the release notes.
-- Zero-downtime rule (from Phase 9, HA): use expand → migrate data → contract, spread over at least two releases. Never rename or drop a column that is still read by the previous release.
+- Zero-downtime rule (mandatory from the first stable release, because the Helm chart runs several api/worker replicas): use expand → migrate data → contract, spread over at least two releases. Never rename or drop a column that is still read by the previous release.
 - CI runs `up → down → up` on an empty database and verifies that the schema dump equals the committed one.

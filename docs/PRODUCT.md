@@ -140,7 +140,7 @@ Not in the MVP: cloud providers, k3s/RKE2, Kubernetes upgrades and Velero-based 
 | Deployment success rate on supported OS/hardware (Tier 2/3 E2E) | ≥ 98 % |
 | Recovery: interrupted deployments that resume to READY without manual node intervention | ≥ 95 % |
 | Errors shown with what/why/where/how-to-fix | 100 % of known error classes |
-| User actions to create a cluster in Auto Mode | ≤ 6 inputs + Deploy |
+| User actions to create a cluster in Auto Mode | 5 inputs (name, infrastructure, environment, size, availability) + Deploy, plus credentials/hosts if not yet registered |
 | Security | 0 secrets in logs/API (canary tests), 0 high/critical unaccepted vulnerabilities at release |
 
 ## 10. Principles that shape the product (from the spec)

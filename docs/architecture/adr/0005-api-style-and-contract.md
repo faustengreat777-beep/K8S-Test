@@ -1,4 +1,4 @@
-# ADR-0005: REST/JSON API with a committed OpenAPI 3.1 contract (Huma, contract-first in Go), async operations and problem+json errors
+# ADR-0005: REST/JSON API with a committed OpenAPI 3.1 contract (code-first with Huma), async operations and problem+json errors
 
 - Status: Proposed
 - Date: 2026-10-06

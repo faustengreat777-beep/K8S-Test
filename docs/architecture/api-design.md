@@ -11,7 +11,7 @@ Farvater is **API-first** (prompt §40, §57). The web UI, the CLI (`farvater`),
 | Aspect | Decision |
 |---|---|
 | Protocol | HTTPS, JSON (`application/json`), UTF-8 |
-| Contract | **OpenAPI 3.1**, produced **contract-first in Go** with **Huma v2** on the chi router: typed operation definitions (request/response structs with validation tags) generate the OpenAPI 3.1 document, JSON Schemas, request validation and RFC 9457 errors. The generated `api/openapi/openapi.yaml` is **committed**; every PR shows the contract diff, **oasdiff** blocks breaking changes in v1, and **vacuum** lints it. The TypeScript client is generated from the committed document (`openapi-typescript` + `openapi-fetch`); the CLI uses `pkg/client`, a thin typed client over the shared request/response types (or an oapi-codegen client if an external consumer needs one). A CI job fails when the committed spec or generated clients are stale. |
+| Contract | **OpenAPI 3.1**, produced **code-first in Go** with **Huma v2** on the chi router (the committed spec is the reviewed contract): typed operation definitions (request/response structs with validation tags) generate the OpenAPI 3.1 document, JSON Schemas, request validation and RFC 9457 errors. The generated `api/openapi/openapi.yaml` is **committed**; every PR shows the contract diff, **oasdiff** blocks breaking changes in v1, and **vacuum** lints it. The TypeScript client is generated from the committed document (`openapi-typescript` + `openapi-fetch`); the CLI uses `pkg/client`, a thin typed client over the shared request/response types (or an oapi-codegen client if an external consumer needs one). A CI job fails when the committed spec or generated clients are stale. |
 | Base path / versioning | `/api/v1`. Within v1 only **additive** changes (new endpoints, new optional fields, new enum values that clients must tolerate). Breaking changes → `/api/v2` running side by side. Deprecated endpoints send `Deprecation` and `Sunset` headers (RFC 9745 / RFC 8594) for at least two minor releases. |
 | Naming | Plural nouns, kebab-case paths, camelCase JSON fields, ids are UUIDv7 strings, timestamps RFC 3339 UTC |
 | Long-running work | `202 Accepted` + `Operation` resource + `Location: /api/v1/operations/{id}` |
@@ -83,7 +83,7 @@ Tenant scoping: **collections** live under their parent (`/organizations/{orgId}
 | `GET /operations/{id}/tasks` | Task tree with statuses, attempts, durations | `deployment:read` |
 | `GET /operations/{id}/events` | **SSE** live stream with replay (`Last-Event-ID`) | `deployment:read` |
 | `GET /operations/{id}/logs?level=&task=&node=&q=&pageToken=` | Searchable, filterable structured logs (JSON or `text/plain` download) | `deployment:read` |
-| `POST /operations/{id}/cancel` · `/resume` · `/retry` (optionally `{taskKey}`) · `/rollback` | Control actions | `deployment:cancel` / `deployment:retry` |
+| `POST /operations/{id}/cancel` · `/resume` · `/retry` (optionally `{taskKey}`) · `/rollback` | Control actions | cancel → `deployment:cancel`; resume and retry → `deployment:retry`; rollback → `deployment:rollback` |
 
 ### 2.5 Catalog, validation, Auto Mode
 
@@ -95,7 +95,7 @@ Tenant scoping: **collections** live under their parent (`/organizations/{orgId}
 | `GET /api/v1/catalog/presets` | Presets (Minimal, Development, Staging, Production, High Availability, Edge, GPU, AI/ML, Custom) |
 | `GET /api/v1/schemas/cluster-spec` | JSON Schema of ClusterSpec (for Monaco/YAML editors and the CLI) |
 | `POST /api/v1/validate` | Validate a ClusterSpec: schema + compatibility + guardrails/policies → findings (no side effects) |
-| `POST /api/v1/recommendations` | Auto Mode: answers (environment, size, availability, workload, budget, compliance, provider) → recommended ClusterSpec + per-field explanations + warnings + estimates |
+| `POST /api/v1/recommendations` | Auto Mode: required answers (infrastructure/provider account, environment, size, availability) and optional ones (workload, budget, compliance, region, preferences) → recommended ClusterSpec + per-field explanations + warnings + estimates. The cluster name is the fifth Auto Mode input but isn't needed for the recommendation |
 | `POST /api/v1/preflight` | Live preflight against hosts/provider → `202` Operation of type `preflight` with per-check results |
 
 ### 2.6 Templates, audit, webhooks, notifications, search
@@ -104,7 +104,7 @@ Tenant scoping: **collections** live under their parent (`/organizations/{orgId}
 |---|---|
 | `GET/POST /organizations/{orgId}/templates` · `GET /templates/{id}` · `POST /templates/{id}/versions` · `PATCH /templates/{id}/versions/{v}` (status) | Cluster templates with versions, inheritance, status (prompt §33, §191–192) |
 | `POST /templates/{id}/versions/{v}/instantiate` | Create a cluster draft from a template |
-| `GET /organizations/{orgId}/audit-events?actor=&action=&target=&cluster=&project=&ip=&from=&to=&result=` · `GET …/audit-events:export?format=json|csv` | Audit search and export |
+| `GET /organizations/{orgId}/audit-events?actor=&action=&target=&cluster=&project=&ip=&from=&to=&result=` · `GET …/audit-events:export?format=json\|csv` | Audit search and export |
 | `GET/POST /organizations/{orgId}/webhooks` · `GET /webhooks/{id}/deliveries` · `POST /webhooks/{id}/deliveries/{deliveryId}/replay` · `POST /webhooks/{id}/test` | Webhooks |
 | `GET /me/notifications` · `POST /me/notifications/{id}/read` · `GET/POST /organizations/{orgId}/notification-channels` | Notifications |
 | `GET /api/v1/search?q=&types=clusters,nodes,operations,addons,users` | Global search (prompt §93), authorization-filtered |
@@ -279,7 +279,7 @@ data: {"status":"SUCCEEDED"}
 
 ## 11. CLI mapping
 
-The CLI uses the generated Go client. Commands map 1:1 to API calls and print the same error codes and remediation:
+The CLI uses `pkg/client` (the typed Go client over the shared API types). Commands map 1:1 to API calls and print the same error codes and remediation:
 
 ```
 farvater login --server https://… [--api-key-stdin]

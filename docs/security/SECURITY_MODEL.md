@@ -43,7 +43,7 @@ Farvater holds the keys to its users' infrastructure: root-capable SSH keys, clo
 ```
 
 Design consequences:
-- The **api role never holds infrastructure credentials and never connects to customer infrastructure**. It cannot decrypt credential secrets. Envelope-decryption is wired only into the worker's `SecretAccessor`. The one exception is webhook signing for *outgoing* platform events, which is done by the worker. If the API tier is compromised, the attacker still has no plaintext keys.
+- The **api role never holds infrastructure credentials and never connects to customer infrastructure**. It cannot decrypt credential secrets. Envelope-decryption is wired only into the worker's `SecretAccessor`. Signing of outgoing webhooks also happens in the worker, so the api role needs no decryption capability at all. If the API tier is compromised, the attacker still has no plaintext keys.
 - Workers can run in a separate network zone with egress only to customer infrastructure and the database, and no ingress at all.
 - The KEK (key-encryption key) is never stored in PostgreSQL. It comes from a file or environment variable mounted only into workers (Community), or from an external KMS/Transit engine (Enterprise).
 
@@ -85,7 +85,7 @@ Design consequences:
 - PostgreSQL **RLS** policies on all tenant tables use `current_setting('app.org_id')`, set with `SET LOCAL` per transaction (see [data model §4](../architecture/data-model.md#4-tenant-isolation)). The application role cannot bypass RLS.
 - Background jobs carry `org_id` and re-validate ownership of every referenced id.
 - Logs, audit, operation events, secrets, kubeconfigs and search results are tenant-scoped. SSE streams check authorization at subscribe time and on every resumed connection.
-- Object ids are unguessable (UUIDv7 has 74 random bits). Even so, a foreign or unknown id returns `404`, not `403`, so callers can't enumerate resources.
+- Object ids are unguessable (UUIDv7 ids carry at least 62 random bits; PostgreSQL 18's `uuidv7()` spends 12 bits on sub-millisecond ordering). Even so, a foreign or unknown id returns `404`, not `403`, so callers can't enumerate resources.
 - Tests: tenant-escape tests per repository and per endpoint. Fuzzed id substitution in API tests.
 - Never rely on the frontend for isolation (prompt §212).
 
@@ -105,8 +105,8 @@ KEK  (key-encryption key)  — from KeyProvider: local key file / env (Community
   - KEK rotation re-wraps DEKs only, which is cheap.
   - DEK rotation creates a new active DEK. New writes use it, and a background job re-encrypts old payloads lazily. The old DEK becomes `decrypt-only`, then `destroyed` after re-encryption completes.
   - Credential rotation (new SSH key or token) is a product feature with dependent-cluster tracking (prompt §169).
-- **Implementation:** Google Tink Go AEAD (AES-256-GCM) keysets per organization, encrypted by the KEK AEAD. Rotation of keys inside a keyset is native, and Tink KMS extensions cover GCP KMS, AWS KMS and OpenBao/Vault Transit (ADR-0014). There are no custom cryptographic primitives, and known-answer tests run in CI.
-- **Local KEK (Community):** 256-bit key from `ENCRYPTION_KEY` (base64) or a key file (`ENCRYPTION_KEY_FILE`, recommended, mounted from a Kubernetes Secret or a file with 0400 permissions). The server refuses to start without it in non-dev profiles. Key ID and version are recorded with each wrapped DEK, so several KEKs can coexist during rotation.
+- **Implementation:** Google Tink Go AEAD (AES-256-GCM) keysets per organization, encrypted by the KEK AEAD. Rotation of keys inside a keyset is native, and Tink KMS extensions cover GCP KMS, AWS KMS and OpenBao/Vault Transit; Azure Key Vault needs a small custom KMS AEAD (ADR-0014). There are no custom cryptographic primitives, and known-answer tests run in CI.
+- **Local KEK (Community):** 256-bit key from `ENCRYPTION_KEY` (base64) or a key file (`ENCRYPTION_KEY_FILE`, recommended, mounted from a Kubernetes Secret or a file with 0400 permissions). The worker role (and the combined `all` role) refuses to start without it in non-dev profiles. Key ID and version are recorded with each wrapped DEK, so several KEKs can coexist during rotation.
 - **External backends (ee):** `SecretBackend` implementations can store payloads in OpenBao/Vault KV or cloud secret managers instead of PostgreSQL. The `secrets` row then holds only a reference.
 
 ### 6.2 Handling rules (prompt §25)
@@ -123,7 +123,7 @@ Canary tests plant known secret values in test runs, then scan logs, events, API
 
 ### 6.3 Secrets inside managed clusters
 
-- kubeadm clusters are configured with **encryption at rest for Secrets** (`EncryptionConfiguration`). The `aescbc`/`secretbox` local provider is used by default, and **KMS v2** is used when an external KMS is configured (ee).
+- kubeadm clusters are configured with **encryption at rest for Secrets** (`EncryptionConfiguration`). The `secretbox` local provider is used by default (`aescbc` is not used: upstream discourages it because of CBC weaknesses), and **KMS v2** is used when an external KMS is configured (ee).
 - Join tokens are short-lived (default 1 h) and deleted after the operation. kubeadm certificate keys are uploaded only for the duration of control-plane joins.
 - The admin kubeconfig is stored encrypted and never shown in the UI by default. Users download **user-scoped short-lived kubeconfigs**: a client certificate signed by the cluster CA with a TTL (default 8 h), or OIDC later. Each download is audited.
 - The CA private keys of managed clusters stay on control-plane nodes (kubeadm default). The platform keeps an encrypted copy only if the user enables "platform-managed PKI backup" for disaster recovery. Certificate rotation is an operation (prompt §29).

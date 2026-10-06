@@ -109,7 +109,7 @@ The rules are enforced by `depguard`/import-boundary checks in golangci-lint and
 cmd/*            → may import everything (composition root: wires adapters + plugins into the registry)
 internal/api     → internal/app, internal/authn, internal/errcatalog, pkg/spec          (never adapters directly)
 internal/app     → internal/domain, internal/engine, ports (interfaces), pkg/sdk, pkg/spec
-internal/engine  → internal/domain, pkg/sdk                                              (never plugins, never adapters)
+internal/engine  → internal/domain, pkg/sdk; defines its own ports (store, leases, events, clock)  (never plugins, never adapters, never internal/app)
 internal/domain  → stdlib only (+ tiny utility libs)
 internal/adapters/* → implement ports; may import third-party SDKs (pgx, River, x/crypto/ssh, Helm, client-go)
 plugins/*        → pkg/sdk, pkg/spec, small shared helpers (never internal/app or internal/engine)
