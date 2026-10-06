@@ -114,10 +114,25 @@ Not in the MVP: cloud providers, k3s/RKE2, Kubernetes upgrades and Velero-based 
 - Not "yet another UI over kubeadm" or a shell-script runner. The value is in the engine, the catalog, the compatibility rules and explainability.
 - Not a general-purpose infrastructure-as-code tool. Terraform/OpenTofu and Ansible are not wrapped in the core (ADR-0013).
 - Not a workload PaaS (no app build/deploy pipelines). GitOps integration covers workload delivery.
+- Not a generic Kubernetes resource browser. For in-cluster browsing we link to or integrate **Headlamp** (Apache-2.0, the official successor of the archived Kubernetes Dashboard). Our UI effort goes into lifecycle, plans, diffs, explanations and governance.
 - No promise of legal compliance. The platform reports controls and evidence; it never claims that an organization "is compliant".
 - No invented prices or SLAs. Cost estimates appear only when the provider publishes prices, and SLA targets only with matching infrastructure.
 
-## 8. Success metrics
+## 8. Market context and differentiation (research, 2026-10)
+
+| Tool | What it does well | Gap we address |
+|---|---|---|
+| Rancher (SUSE) | Multi-cluster management, CAPI-native since 2.13, free | Heavy (needs a Kubernetes "local" cluster); bare metal via an agent and RKE2/K3s only; no kubeadm path; little explanation of decisions |
+| KubeOne / Kubermatic KKP | kubeadm over SSH (CLI), open-core KKP | KubeOne is CLI-only with no UI or recommendations; KKP targets large hosted-control-plane setups |
+| Kubespray / Kubean | Battle-tested Ansible installer, offline packages | No API, UI or state store; slow and opaque on failure; stale add-ons (e.g. cert-manager 1.15, MetalLB 0.13 in v2.32) |
+| k0s + k0sctl, KubeKey | Simple SSH installers | Single distribution or ecosystem; no lifecycle platform |
+| Spectro Cloud Palette, Platform9, Nutanix NKP | Enterprise multi-infrastructure lifecycle on CAPI | Proprietary and expensive |
+| Talos Omni | Excellent UX for Talos | Talos-only (boot an ISO, no SSH onto existing OS); BSL license; ownership changed in 2026 |
+| Portainer, Headlamp, Lens | Management UIs | Do not provision clusters (Portainer removed provisioning in 2026) |
+
+**Farvater's position**: the shortest path from *plain SSH hosts or a VPS account* to a *production-ready, current, compatibility-checked* cluster, with every decision and every failure explained, on an open core that will not be relicensed.
+
+## 9. Success metrics
 
 | Metric | Target (MVP) |
 |---|---|
@@ -128,7 +143,7 @@ Not in the MVP: cloud providers, k3s/RKE2, Kubernetes upgrades and Velero-based 
 | User actions to create a cluster in Auto Mode | ≤ 6 inputs + Deploy |
 | Security | 0 secrets in logs/API (canary tests), 0 high/critical unaccepted vulnerabilities at release |
 
-## 9. Principles that shape the product (from the spec)
+## 10. Principles that shape the product (from the spec)
 
 - **Explain everything.** Recommendations have reasons, failures have causes and fixes, plans show diffs and irreversible steps.
 - **Never create a known-broken cluster.** Compatibility engine plus version catalog.

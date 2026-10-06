@@ -86,6 +86,8 @@ Main screens:
 | **Settings → Configuration** | Advanced tree (prompt §4): General, Kubernetes, Control Plane, Workers, Networking, DNS, Container Runtime, Storage, Gateway/Ingress, Load Balancer, Certificates, Security, Observability, Logging, Backup, GitOps, Autoscaling, GPU, Registry, Add-ons, Scheduling, Policies, Advanced — with **YAML** tab and **History/Diff** tab |
 | **Upgrade** | Upgrade advisor: current vs target, compatibility, preflight, plan, potential downtime, warnings → confirm |
 
+Out of scope: a generic browser for in-cluster Kubernetes resources (pods, deployments, CRDs). Cluster pages link to **Headlamp**, which the platform can install as an optional add-on, authenticated with the user-scoped kubeconfig. Our UI stays focused on lifecycle, plans, diffs, explanations and governance.
+
 ## 4. Cluster creation: three modes, one model
 
 All modes produce the same **ClusterSpec** and end in the same **Review → Plan → Deploy** step. Switching mode keeps the data. The user can start in Auto, open "Customize" (Simple/Advanced) and then edit YAML, and nothing is lost.

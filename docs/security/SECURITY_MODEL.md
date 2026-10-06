@@ -193,4 +193,5 @@ The platform never claims that a cluster is "compliant" with any framework. It r
 - **Logging:** structured JSON (`slog`), request ids, no secrets, no full request bodies for sensitive endpoints.
 - **Backups of the platform:** database (including encrypted secrets), configuration, audit logs. KEK backups are kept **separately** from database backups. Restore tests are part of the release checklist (prompt §183).
 - **Vulnerability disclosure:** `SECURITY.md` (Phase 1) with a private reporting channel, supported versions and response targets.
+- **Regulatory readiness:** if the Enterprise edition is sold in the EU, the **Cyber Resilience Act** applies. Its vulnerability and incident reporting obligations have applied since 2026-09-11, and the full obligations apply from 2027-12-11. SBOMs, signed artifacts, a published disclosure process and support periods per release line are therefore required from the first commercial release.
 - **Threat model** maintained in [THREAT_MODEL.md](THREAT_MODEL.md) and reviewed at every phase gate. New features that touch credentials, tenancy, remote execution or outbound network access need a threat-model update in the same PR.
